@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>イナバ Web QRコード</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Bebas+Neue&display=swap');
+
+  :root {
+    --red: #C8102E;
+    --red-dark: #9e0c24;
+    --ink: #1a1a1a;
+    --surface: #f5f4f0;
+    --card: #ffffff;
+    --muted: #888;
+    --border: #e0ddd7;
+    --active-bg: #C8102E;
+    --active-text: #fff;
+    --tag-bg: #f0ece4;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--surface);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--ink);
+    color: #fff;
+    padding: 18px 24px 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+  header .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 2px;
+    color: var(--red);
+    line-height: 1;
+  }
+  header .subtitle {
+    font-size: 12px;
+    color: #aaa;
+    letter-spacing: 1px;
+  }
+
+  .container {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 28px 16px 60px;
+  }
+
+  .step-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    padding-left: 2px;
+  }
+
+  .step-block {
+    margin-bottom: 20px;
+  }
+
+  .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .btn {
+    padding: 9px 16px;
+    border-radius: 6px;
+    border: 1.5px solid var(--border);
+    background: var(--card);
+    color: var(--ink);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .btn:hover {
+    border-color: var(--red);
+    color: var(--red);
+    background: #fff8f8;
+  }
+  .btn.active {
+    background: var(--active-bg);
+    color: var(--active-text);
+    border-color: var(--active-bg);
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0 20px;
+  }
+
+  /* QR result card */
+  .result-card {
+    background: var(--card);
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    padding: 28px 24px;
+    display: flex;
+    gap: 28px;
+    align-items: flex-start;
+    margin-top: 8px;
+    animation: fadeUp 0.25s ease;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .qr-wrap {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  #qrcode canvas, #qrcode img {
+    border-radius: 8px;
+    display: block;
+  }
+
+  .result-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .result-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .tag {
+    background: var(--tag-bg);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 3px 9px;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+  .tag.red {
+    background: #fff0f0;
+    color: var(--red);
+  }
+
+  .result-name {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    line-height: 1.3;
+  }
+
+  .result-url {
+    font-size: 12px;
+    color: var(--muted);
+    word-break: break-all;
+    background: var(--surface);
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    font-family: monospace;
+  }
+
+  .open-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background: var(--red);
+    color: #fff;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    transition: background 0.15s;
+  }
+  .open-btn:hover { background: var(--red-dark); }
+
+  .hidden { display: none !important; }
+
+  /* Mobile */
+  @media (max-width: 560px) {
+    .result-card { flex-direction: column; align-items: center; }
+    .result-info { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="logo">INABA</span>
+  <span class="subtitle">Webページ QRコード生成</span>
+</header>
+
+<div class="container">
+
+  <!-- STEP 1 -->
+  <div class="step-block" id="step1-block">
+    <div class="step-label">STEP 1 — 情報種類</div>
+    <div class="btn-group" id="step1-btns"></div>
+  </div>
+
+  <div class="divider" id="div1" style="display:none"></div>
+
+  <!-- STEP 2 -->
+  <div class="step-block hidden" id="step2-block">
+    <div class="step-label">STEP 2 — 商品カテゴリ</div>
+    <div class="btn-group" id="step2-btns"></div>
+  </div>
+
+  <div class="divider" id="div2" style="display:none"></div>
+
+  <!-- STEP 3 -->
+  <div class="step-block hidden" id="step3-block">
+    <div class="step-label">STEP 3 — シリーズ名</div>
+    <div class="btn-group" id="step3-btns"></div>
+  </div>
+
+  <!-- Result -->
+  <div id="result-area" class="hidden">
+    <div class="divider"></div>
+    <div class="result-card">
+      <div class="qr-wrap">
+        <div id="qrcode"></div>
+      </div>
+      <div class="result-info">
+        <div class="result-tags">
+          <span class="tag" id="tag-type"></span>
+          <span class="tag" id="tag-cat"></span>
+          <span class="tag red" id="tag-series"></span>
+        </div>
+        <div class="result-name" id="result-name"></div>
+        <div class="result-url" id="result-url"></div>
+        <a id="result-link" href="#" target="_blank" class="open-btn">ウェブサイトを開く ↗</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── データ ──────────────────────────────────────────
+const data = [
+  { type:"イナバ物置HP", cat:"", series:"", url:"https://www.inaba-ss.co.jp/monooki/" },
+
+  // 製品詳細
+  { type:"製品詳細", cat:"◆トップ◆", series:"", url:"https://www.inaba-ss.co.jp/monooki/lineup/" },
+  { type:"製品詳細", cat:"物置", series:"アイビーストッカー【BJX】", url:"https://www.inaba-ss.co.jp/monooki/lineup/bjx/" },
+  { type:"製品詳細", cat:"物置", series:"シンプリー【MJX】", url:"https://www.inaba-ss.co.jp/monooki/lineup/mjx/" },
+  { type:"製品詳細", cat:"物置", series:"ナイソーシスター【KMW】", url:"https://www.inaba-ss.co.jp/monooki/lineup/kmw/" },
+  { type:"製品詳細", cat:"物置", series:"ナイソー【SMK】", url:"https://www.inaba-ss.co.jp/monooki/lineup/smk/" },
+  { type:"製品詳細", cat:"物置", series:"フォルタ【FS】", url:"https://www.inaba-ss.co.jp/monooki/lineup/fs/" },
+  { type:"製品詳細", cat:"物置", series:"フォルタプラス【FP】", url:"https://www.inaba-ss.co.jp/monooki/lineup/fp/" },
+  { type:"製品詳細", cat:"物置", series:"フォルタ屋根傾斜【FK】", url:"https://www.inaba-ss.co.jp/monooki/lineup/fk/" },
+  { type:"製品詳細", cat:"物置", series:"フォルタ縦長大型【FT】", url:"https://www.inaba-ss.co.jp/monooki/lineup/ft/" },
+  { type:"製品詳細", cat:"物置", series:"フォルタ大型【FB】", url:"https://www.inaba-ss.co.jp/monooki/lineup/fb/" },
+  { type:"製品詳細", cat:"物置", series:"フォルタウィズ【FW】", url:"https://www.inaba-ss.co.jp/monooki/lineup/fw/" },
+  { type:"製品詳細", cat:"物置", series:"ドマール【FF】", url:"https://www.inaba-ss.co.jp/monooki/lineup/ff/" },
+  { type:"製品詳細", cat:"物置", series:"宅配ボックス【TBJ】", url:"https://www.inaba-ss.co.jp/monooki/lineup/tbj/" },
+  { type:"製品詳細", cat:"マルチスペース", series:"コモスペース【SS3】", url:"https://www.inaba-ss.co.jp/monooki/lineup/ss3/" },
+  { type:"製品詳細", cat:"ガレージ・倉庫", series:"アルシア【DR】", url:"https://www.inaba-ss.co.jp/monooki/lineup/dr/" },
+  { type:"製品詳細", cat:"ガレージ・倉庫", series:"タフレージ【WG】", url:"https://www.inaba-ss.co.jp/monooki/lineup/wg/" },
+  { type:"製品詳細", cat:"ガレージ・倉庫", series:"ガレーディア【GRN】", url:"https://www.inaba-ss.co.jp/monooki/lineup/grn/" },
+  { type:"製品詳細", cat:"ガレージ・倉庫", series:"アルシアフィット【DM】", url:"https://www.inaba-ss.co.jp/monooki/lineup/dm/" },
+  { type:"製品詳細", cat:"ガレージ・倉庫", series:"バイク保管庫【FM】", url:"https://www.inaba-ss.co.jp/monooki/lineup/fm/" },
+  { type:"製品詳細", cat:"ガレージ・倉庫", series:"イナバ倉庫【SGN】", url:"https://www.inaba-ss.co.jp/monooki/lineup/sgn/" },
+  { type:"製品詳細", cat:"パブリック", series:"ダストボックスミニ【DBN/DCN】", url:"https://www.inaba-ss.co.jp/monooki/lineup/dbn/" },
+  { type:"製品詳細", cat:"パブリック", series:"ダストボックス【FS/FF】", url:"https://www.inaba-ss.co.jp/monooki/lineup/db/" },
+  { type:"製品詳細", cat:"パブリック", series:"連続型物置ドア【FD】", url:"https://www.inaba-ss.co.jp/monooki/lineup/fd/" },
+  { type:"製品詳細", cat:"パブリック", series:"連続型物置扉【FL】", url:"https://www.inaba-ss.co.jp/monooki/lineup/fl/" },
+  { type:"製品詳細", cat:"パブリック", series:"自転車置場【BP他】", url:"https://www.inaba-ss.co.jp/monooki/lineup/by-bf/" },
+
+  // データダウンロード
+  { type:"データDL", cat:"◆トップ◆", series:"", url:"https://www.inaba-ss.co.jp/monooki/download/" },
+  { type:"データDL", cat:"物置", series:"アイビーストッカー【BJX】", url:"https://www.inaba-ss.co.jp/monooki/download/bjx/" },
+  { type:"データDL", cat:"物置", series:"シンプリー【MJX】", url:"https://www.inaba-ss.co.jp/monooki/download/mjx/" },
+  { type:"データDL", cat:"物置", series:"ナイソーシスター【KMW】", url:"https://www.inaba-ss.co.jp/monooki/download/kmw/" },
+  { type:"データDL", cat:"物置", series:"ナイソー【SMK】", url:"https://www.inaba-ss.co.jp/monooki/download/smk/" },
+  { type:"データDL", cat:"物置", series:"フォルタ【FS】", url:"https://www.inaba-ss.co.jp/monooki/download/fs/" },
+  { type:"データDL", cat:"物置", series:"フォルタプラス【FP】", url:"https://www.inaba-ss.co.jp/monooki/download/fp/" },
+  { type:"データDL", cat:"物置", series:"フォルタ屋根傾斜【FK】", url:"https://www.inaba-ss.co.jp/monooki/download/fk/" },
+  { type:"データDL", cat:"物置", series:"フォルタ縦長大型【FT】", url:"https://www.inaba-ss.co.jp/monooki/download/ft/" },
+  { type:"データDL", cat:"物置", series:"フォルタ大型【FB】", url:"https://www.inaba-ss.co.jp/monooki/download/fb/" },
+  { type:"データDL", cat:"物置", series:"フォルタウィズ【FW】", url:"https://www.inaba-ss.co.jp/monooki/download/fw/" },
+  { type:"データDL", cat:"物置", series:"ドマール【FF】", url:"https://www.inaba-ss.co.jp/monooki/download/ff/" },
+  { type:"データDL", cat:"物置", series:"宅配ボックス【TBJ】", url:"https://www.inaba-ss.co.jp/monooki/download/tbj/" },
+  { type:"データDL", cat:"マルチスペース", series:"コモスペース【SS3】", url:"https://www.inaba-ss.co.jp/monooki/download/ss3/" },
+  { type:"データDL", cat:"ガレージ・倉庫", series:"アルシア【DR】", url:"https://www.inaba-ss.co.jp/monooki/download/dr/" },
+  { type:"データDL", cat:"ガレージ・倉庫", series:"タフレージ【WG】", url:"https://www.inaba-ss.co.jp/monooki/download/wg/" },
+  { type:"データDL", cat:"ガレージ・倉庫", series:"ガレーディア【GRN】", url:"https://www.inaba-ss.co.jp/monooki/download/grn/" },
+  { type:"データDL", cat:"ガレージ・倉庫", series:"アルシアフィット【DM】", url:"https://www.inaba-ss.co.jp/monooki/download/dm/" },
+  { type:"データDL", cat:"ガレージ・倉庫", series:"バイク保管庫【FM】", url:"https://www.inaba-ss.co.jp/monooki/download/fm/" },
+  { type:"データDL", cat:"ガレージ・倉庫", series:"イナバ倉庫【SGN】", url:"https://www.inaba-ss.co.jp/monooki/download/sgn/" },
+  { type:"データDL", cat:"パブリック", series:"ダストボックスミニ【DBN/DCN】", url:"https://www.inaba-ss.co.jp/monooki/download/dbn/" },
+  { type:"データDL", cat:"パブリック", series:"ダストボックス【FS/FF】", url:"https://www.inaba-ss.co.jp/monooki/download/db/" },
+  { type:"データDL", cat:"パブリック", series:"連続型物置ドア【FD】", url:"https://www.inaba-ss.co.jp/monooki/download/fd/" },
+  { type:"データDL", cat:"パブリック", series:"連続型物置扉【FL】", url:"https://www.inaba-ss.co.jp/monooki/download/fl/" },
+  { type:"データDL", cat:"パブリック", series:"自転車置場【BP他】", url:"https://www.inaba-ss.co.jp/monooki/download/by-bf/" },
+
+  // 画像ダウンロード
+  { type:"画像DL", cat:"◆トップ◆", series:"", url:"https://www.inaba-ss.co.jp/imgdl/" },
+  { type:"画像DL", cat:"物置", series:"アイビーストッカー【BJX】", url:"https://www.inaba-ss.co.jp/imgdl/bjx/index.html" },
+  { type:"画像DL", cat:"物置", series:"シンプリー【MJX】", url:"https://www.inaba-ss.co.jp/imgdl/mjx/index.html" },
+  { type:"画像DL", cat:"物置", series:"ナイソーシスター【KMW】", url:"https://www.inaba-ss.co.jp/imgdl/kmw/index.html" },
+  { type:"画像DL", cat:"物置", series:"ナイソー【SMK】", url:"https://www.inaba-ss.co.jp/imgdl/smk/index.html" },
+  { type:"画像DL", cat:"物置", series:"フォルタ【FS】", url:"https://www.inaba-ss.co.jp/imgdl/fs/index.html" },
+  { type:"画像DL", cat:"物置", series:"フォルタプラス【FP】", url:"https://www.inaba-ss.co.jp/imgdl/fp/index.html" },
+  { type:"画像DL", cat:"物置", series:"フォルタ屋根傾斜【FK】", url:"https://www.inaba-ss.co.jp/imgdl/fk/index.html" },
+  { type:"画像DL", cat:"物置", series:"フォルタ縦長大型【FT】", url:"https://www.inaba-ss.co.jp/imgdl/ft/index.html" },
+  { type:"画像DL", cat:"物置", series:"フォルタ大型【FB】", url:"https://www.inaba-ss.co.jp/imgdl/fb/index.html" },
+  { type:"画像DL", cat:"物置", series:"フォルタウィズ【FW】", url:"https://www.inaba-ss.co.jp/imgdl/fw/index.html" },
+  { type:"画像DL", cat:"物置", series:"ドマール【FF】", url:"https://www.inaba-ss.co.jp/imgdl/ff/index.html" },
+  { type:"画像DL", cat:"物置", series:"宅配ボックス【TBJ】", url:"https://www.inaba-ss.co.jp/imgdl/tbj/index.html" },
+  { type:"画像DL", cat:"マルチスペース", series:"コモスペース【SS3】", url:"https://www.inaba-ss.co.jp/imgdl/ss3/index.html" },
+  { type:"画像DL", cat:"ガレージ・倉庫", series:"アルシア【DR】", url:"https://www.inaba-ss.co.jp/imgdl/dr/index.html" },
+  { type:"画像DL", cat:"ガレージ・倉庫", series:"タフレージ【WG】", url:"https://www.inaba-ss.co.jp/imgdl/wg/index.html" },
+  { type:"画像DL", cat:"ガレージ・倉庫", series:"ガレーディア【GRN】", url:"https://www.inaba-ss.co.jp/imgdl/grn/index.html" },
+  { type:"画像DL", cat:"ガレージ・倉庫", series:"アルシアフィット【DM】", url:"https://www.inaba-ss.co.jp/imgdl/dm/index.html" },
+  { type:"画像DL", cat:"ガレージ・倉庫", series:"バイク保管庫【FM】", url:"https://www.inaba-ss.co.jp/imgdl/fm/index.html" },
+  { type:"画像DL", cat:"ガレージ・倉庫", series:"イナバ倉庫【SGN】", url:"https://www.inaba-ss.co.jp/imgdl/sgn/index.html" },
+  { type:"画像DL", cat:"パブリック", series:"ダストボックスミニ【DBN/DCN】", url:"https://www.inaba-ss.co.jp/imgdl/dustbox/index.html" },
+  { type:"画像DL", cat:"パブリック", series:"連続型物置ドア【FD】", url:"https://www.inaba-ss.co.jp/imgdl/fd-ff/index.html" },
+  { type:"画像DL", cat:"パブリック", series:"連続型物置扉【FL】", url:"https://www.inaba-ss.co.jp/imgdl/fd-ff/index.html" },
+  { type:"画像DL", cat:"パブリック", series:"自転車置場【BP他】", url:"https://www.inaba-ss.co.jp/imgdl/by-bf/index.html" },
+
+  // 特設
+  { type:"特設ページ", cat:"", series:"コモ他社周辺製品", url:"https://www.inaba-ss.co.jp/monooki/fe4djihe4uql/" },
+];
+
+// ── State ──────────────────────────────────────────
+let selType = null, selCat = null, selSeries = null;
+let qrInstance = null;
+
+// ── Helpers ────────────────────────────────────────
+const unique = arr => [...new Set(arr)].filter(Boolean);
+
+function getTypes() {
+  return unique(data.map(d => d.type));
+}
+function getCats(type) {
+  return unique(data.filter(d => d.type === type).map(d => d.cat));
+}
+function getSeries(type, cat) {
+  return unique(data.filter(d => d.type === type && d.cat === cat).map(d => d.series)).filter(s => s !== "");
+}
+function getUrl(type, cat, series) {
+  const row = data.find(d => d.type === type && d.cat === cat && d.series === (series || ""));
+  return row ? row.url : null;
+}
+
+// ── Render helpers ─────────────────────────────────
+function makeButtons(container, items, active, onClick) {
+  container.innerHTML = "";
+  items.forEach(item => {
+    const b = document.createElement("button");
+    b.className = "btn" + (item === active ? " active" : "");
+    b.textContent = item;
+    b.onclick = () => onClick(item);
+    container.appendChild(b);
+  });
+}
+
+function showQR(url, labelType, labelCat, labelSeries) {
+  document.getElementById("result-area").classList.remove("hidden");
+  document.getElementById("tag-type").textContent = labelType || "";
+  document.getElementById("tag-type").style.display = labelType ? "" : "none";
+  document.getElementById("tag-cat").textContent = labelCat || "";
+  document.getElementById("tag-cat").style.display = labelCat ? "" : "none";
+  document.getElementById("tag-series").textContent = labelSeries || "";
+  document.getElementById("tag-series").style.display = labelSeries ? "" : "none";
+
+  const nameParts = [labelCat && labelCat !== "◆トップ◆" ? labelCat : "", labelSeries].filter(Boolean);
+  document.getElementById("result-name").textContent = nameParts.length ? nameParts.join(" › ") : labelType;
+  document.getElementById("result-url").textContent = url;
+  document.getElementById("result-link").href = url;
+
+  const qrEl = document.getElementById("qrcode");
+  qrEl.innerHTML = "";
+  qrInstance = new QRCode(qrEl, {
+    text: url,
+    width: 180,
+    height: 180,
+    colorDark: "#1a1a1a",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.M
+  });
+}
+
+function hideResult() {
+  document.getElementById("result-area").classList.add("hidden");
+}
+
+// ── Main logic ─────────────────────────────────────
+function selectType(type) {
+  selType = type;
+  selCat = null;
+  selSeries = null;
+  hideResult();
+
+  makeButtons(document.getElementById("step1-btns"), getTypes(), type, selectType);
+
+  const cats = getCats(type).filter(c => c !== "");
+
+  // イナバ物置HP / 特設ページ → no sub-steps
+  if (cats.length === 0) {
+    document.getElementById("step2-block").classList.add("hidden");
+    document.getElementById("step3-block").classList.add("hidden");
+    document.getElementById("div1").style.display = "none";
+    document.getElementById("div2").style.display = "none";
+    // cat・seriesが空でも一致するよう、typeだけで検索
+    const row = data.find(d => d.type === type);
+    if (row) showQR(row.url, type, row.cat || "", row.series || "");
+    return;
+  }
+
+  // Has categories
+  document.getElementById("div1").style.display = "";
+  document.getElementById("step2-block").classList.remove("hidden");
+  document.getElementById("step3-block").classList.add("hidden");
+  document.getElementById("div2").style.display = "none";
+
+  // If ◆トップ◆ is in cats, also add it as a selectable option
+  const catOptions = cats;
+  // Check for top-level entry (cat == ◆トップ◆ or cat == "")
+  const hasTop = data.some(d => d.type === type && (d.cat === "◆トップ◆"));
+  const displayCats = hasTop ? catOptions : catOptions;
+
+  makeButtons(document.getElementById("step2-btns"), displayCats, null, selectCat);
+}
+
+function selectCat(cat) {
+  selCat = cat;
+  selSeries = null;
+  hideResult();
+
+  makeButtons(document.getElementById("step2-btns"), getCats(selType).filter(c => c !== ""), cat, selectCat);
+
+  // ◆トップ◆ → direct QR
+  if (cat === "◆トップ◆") {
+    document.getElementById("step3-block").classList.add("hidden");
+    document.getElementById("div2").style.display = "none";
+    const url = getUrl(selType, cat, "");
+    if (url) showQR(url, selType, cat, "");
+    return;
+  }
+
+  const seriesList = getSeries(selType, cat);
+  if (seriesList.length === 0) {
+    document.getElementById("step3-block").classList.add("hidden");
+    document.getElementById("div2").style.display = "none";
+    const url = getUrl(selType, cat, "");
+    if (url) showQR(url, selType, cat, "");
+    return;
+  }
+
+  document.getElementById("div2").style.display = "";
+  document.getElementById("step3-block").classList.remove("hidden");
+  makeButtons(document.getElementById("step3-btns"), seriesList, null, selectSeries);
+}
+
+function selectSeries(series) {
+  selSeries = series;
+  makeButtons(document.getElementById("step3-btns"), getSeries(selType, selCat), series, selectSeries);
+  const url = getUrl(selType, selCat, series);
+  if (url) showQR(url, selType, selCat, series);
+}
+
+// ── Init ───────────────────────────────────────────
+makeButtons(document.getElementById("step1-btns"), getTypes(), null, selectType);
+</script>
+</body>
+</html>
